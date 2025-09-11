@@ -19,11 +19,11 @@ import Network.Wai (requestHeaders)
 sessionInsert :: String -> String -> ActionM ()
 sessionInsert key value = do
     let cookie = defaultSetCookie 
-            { setCookieName = TE.encodeUtf8 $ T.pack key
+            { setCookieName = TE.encodeUtf8 $ T.pack key -- Converte String -> Text -> ByteString que é o formato esperado pela função
             , setCookieValue = TE.encodeUtf8 $ T.pack value
-            , setCookiePath = Just "/"
+            , setCookiePath = Just "/" -- Cookie válido para todos os caminhos
             }
-    setHeader "Set-Cookie" $ TL.fromStrict $ TE.decodeUtf8 $ BS.toStrict $ toLazyByteString $ renderSetCookie cookie
+    setHeader "Set-Cookie" $ TL.fromStrict $ TE.decodeUtf8 $ BS.toStrict $ toLazyByteString $ renderSetCookie cookie 
 
 -- Busca na sessão
 sessionLookup :: String -> ActionM (Maybe String)

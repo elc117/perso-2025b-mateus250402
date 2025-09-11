@@ -11,6 +11,7 @@ import qualified Pages.Login as Login
 import qualified Pages.Register as Register
 import qualified Pages.AddGame as AddGame
 import qualified Pages.Backlog as Backlog
+import qualified Pages.Confirm as Confirm
 import qualified Data.Text.Lazy as TL      
 import qualified Data.Text as T          
 import qualified DB.DB as DB
@@ -89,11 +90,18 @@ main = do
         post "/add" $ Session.requireAuth $ do
             name <- param "name" :: ActionM Text
             score <- param "score" :: ActionM Text
+            platform <- param "platform" :: ActionM Text
             userId <- Session.sessionLookup "user_id" 
             liftIO $ putStrLn $ "Usuário " ++ show userId ++ " adicionando jogo: " ++ show name
-            redirect "/backlog"
+            redirect "/confirm"
 
         
+        -- Confirmação
+        get "/confirm" $ Session.requireAuth $ do
+            html $ renderText Confirm.confirmPage
+
+        post "/confirm" $ Session.requireAuth $ do
+            html $ renderText Confirm.confirmPage
         -- Lista de jogos 
         get "/backlog" $ Session.requireAuth $ do
             html $ renderText Backlog.backlogPage
