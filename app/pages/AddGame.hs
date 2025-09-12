@@ -30,7 +30,7 @@ addGamePage = html_ $ do
                     input_ [type_ "text", name_ "name", required_ "", class_ "form-control"]
                 div_ [class_ "mb-3"] $ do
                     label_ [class_ "form-label"] "Nota (0-10): "
-                    input_ [type_ "number", name_ "score", min_ "0", max_ "10", class_ "form-control"]
+                    input_ [type_ "number", name_ "score", min_ "0", max_ "10", step_ "0.1", class_ "form-control"]
                 div_ [class_ "mb-3"] $ do
                     label_ [class_ "form-label"] "Plataforma: "
                     select_ [name_ "platform", required_ "", class_ "form-select"] $ do

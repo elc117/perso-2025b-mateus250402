@@ -88,20 +88,32 @@ main = do
             html $ renderText AddGame.addGamePage
 
         post "/add" $ Session.requireAuth $ do
-            name <- param "name" :: ActionM Text
-            score <- param "score" :: ActionM Text
-            platform <- param "platform" :: ActionM Text
-            userId <- Session.sessionLookup "user_id" 
-            liftIO $ putStrLn $ "Usuário " ++ show userId ++ " adicionando jogo: " ++ show name
-            redirect "/confirm"
+            requestBody <- body
+            let formData = Format.parseFormData requestBody
+            userId <- Session.sessionLookup "user_id"
+            
+            case (lookup "name" formData, lookup "score" formData, lookup "platform" formData) of
+                (Just name, Just score, Just platform) -> do
+                    let nameText = TL.pack name
+                        scoreText = TL.pack score
+                        platformText = TL.pack platform
+                        url = "/confirm?name=" <> nameText <> "&score=" <> scoreText <> "&platform=" <> platformText
+                    redirect url
+                _ -> do
+                    html "Erro: dados do formulário incompletos"
 
         
         -- Confirmação
         get "/confirm" $ Session.requireAuth $ do
-            html $ renderText Confirm.confirmPage
+            nameL <- param "name" :: ActionM Text
+            scoreL <- param "score" :: ActionM Text
+            platformL <- param "platform" :: ActionM Text
+            let name = TL.toStrict nameL
+                score = TL.toStrict scoreL
+                platform = TL.toStrict platformL
+            html $ renderText $ Confirm.confirmPage name score platform
 
-        post "/confirm" $ Session.requireAuth $ do
-            html $ renderText Confirm.confirmPage
+        
         -- Lista de jogos 
         get "/backlog" $ Session.requireAuth $ do
             html $ renderText Backlog.backlogPage
