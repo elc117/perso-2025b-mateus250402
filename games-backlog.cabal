@@ -50,7 +50,8 @@ executable games-backlog
                     http-types,
                     cookie,              
                     blaze-builder,       
-                    wai           
+                    wai,
+                    http-conduit           
 
     -- Diretório com os arquivos Haskell
     hs-source-dirs:   app
