@@ -22,7 +22,8 @@ instance FromJSON GameResponse where
             Nothing -> return $ GameResponse Nothing
             Just coverObj -> do
                 url <- coverObj .: "url"
-                return $ GameResponse (Just $ "https:" <> url)
+                let bigUrl = T.replace "t_thumb" "t_cover_big" url
+                return $ GameResponse (Just $ "https:" <> bigUrl)
 
 -- Busca apenas a URL da capa do jogo
 searchGameCover :: T.Text -> IO (Maybe T.Text)
