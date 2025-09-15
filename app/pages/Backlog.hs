@@ -23,6 +23,14 @@ backlogPage games = html_ $ do
             div_ [class_ "mb-4 text-center"] $ do
                 a_ [href_ "/add", class_ "btn btn-success me-2"] "Adicionar Jogo"
                 a_ [href_ "/", class_ "btn btn-outline-primary"] "Home"
+            form_ [method_ "get", action_ "/backlog", class_ "mb-4 d-flex justify-content-center"] $ do
+                select_ [name_ "platform", class_ "form-select w-auto me-2"] $ do
+                    option_ [value_ ""] "Todas"
+                    option_ [value_ "PlayStation"] "PlayStation"
+                    option_ [value_ "Nintendo"] "Nintendo"
+                    option_ [value_ "PC"] "PC"
+                    option_ [value_ "Xbox"] "Xbox"
+                button_ [type_ "submit", class_ "btn btn-primary"] "Filtrar"
             h2_ [class_ "mt-4 mb-3 text-secondary"] "Jogos Salvos"
             if null games
                 then p_ [class_ "text-center text-muted fs-4"] "Nenhum jogo salvo ainda."

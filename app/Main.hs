@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
 
-import Web.Scotty (scotty, get, post, param, html, redirect, ActionM, body)
+import Web.Scotty (scotty, get, post, param, html, redirect, ActionM, body, rescue)
+import qualified Data.Text as T
 import Lucid (renderText)
 import Control.Monad.IO.Class (liftIO)
 import qualified Pages.Index as Index
@@ -17,7 +19,9 @@ import qualified DB.DB as DB
 import qualified Utils.Session as Session
 import qualified Utils.Format as Format
 import qualified Api.Igdb as Igdb 
+import qualified Data.Text.Lazy as TL
 import qualified Models.Games as Game
+import Control.Exception (try, SomeException)
 
 main :: IO ()
 main = do
@@ -116,9 +120,17 @@ main = do
         -- Lista de jogos 
         get "/backlog" $ Session.requireAuth $ do
             mUserId <- Session.sessionLookup "user_id"
+            -- Captura o parâmetro como Maybe com tipo explícito
+            maybePlatform <- (fmap Just (param "platform" :: ActionM TL.Text)) `rescue` ((\(_ :: SomeException) -> return Nothing) :: SomeException -> ActionM (Maybe TL.Text))
+            let platformFilter = case maybePlatform of
+                    Nothing -> ""
+                    Just p -> TL.toStrict p
             case mUserId of
                 Just userIdStr -> do
                     let userId = read userIdStr :: Int
-                    games <- liftIO $ DB.getGames userId
+                    allGames <- liftIO $ DB.getGames userId
+                    let games = if platformFilter == ""
+                                then allGames
+                                else filter (\g -> Game.platform g == platformFilter) allGames
                     html $ renderText $ Backlog.backlogPage games
-                Nothing -> redirect "/"
+                Nothing -> redirect "/login"
