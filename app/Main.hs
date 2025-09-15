@@ -92,6 +92,25 @@ main = do
             maybeCover <- liftIO $ Igdb.searchGameCover (TL.toStrict name)
 
             html $ renderText $ Confirm.confirmPage (TL.toStrict name) (TL.toStrict score) (TL.toStrict platform) maybeCover
+        
+        post "/confirm" $Session.requireAuth $ do
+            requestBody <- body
+            let formData = Format.parseFormData requestBody
+            mUserId <- Session.sessionLookup "user_id"
+
+            case (lookup "name" formData, lookup "score" formData, lookup "platform" formData, mUserId) of
+                (Just name, Just score, Just platform, Just userIdStr) -> do
+                    maybeCover <- liftIO $ Igdb.searchGameCover (T.pack name)
+                    let coverUrl = maybe "" id maybeCover
+
+                    _ <- liftIO $ DB.insertGame
+                        (read userIdStr) -- user_id como Int
+                        (T.pack name)
+                        (read score :: Double)
+                        (T.pack platform)
+                        maybeCover
+                    redirect "/backlog"
+                _ -> html "Erro ao salvar jogo"
 
         -- Lista de jogos 
         get "/backlog" $ Session.requireAuth $ do

@@ -4,12 +4,12 @@ CREATE TABLE users (
     password TEXT NOT NULL
 );
 
-CREATE TABLE backlog (
+CREATE TABLE games (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
-    game_id INTEGER,
     title TEXT NOT NULL,
     score REAL,
-    added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    platform TEXT NOT NULL,
+    cover_url TEXT,
     FOREIGN KEY(user_id) REFERENCES users(id)
 );

@@ -74,6 +74,20 @@ insertUser email password = do
         Right userId -> return $ Success userId 
         Left err -> return $ Error $ "Erro ao inserir usuário: " ++ show err
 
+insertGame :: Int -> Text -> Double -> Text -> Maybe Text -> IO (Result Int)
+insertGame user_id title score platform cover_url = do
+    result <- (try $do
+            conn <- connectDB
+            execute conn "INSERT INTO games (id_user, title, score, platform, cover_url)"
+                (user_id, title, score, platform, cover_url)
+            gameId <- lastInsertRowId conn
+            close conn
+            return (fromIntegral gameId)) :: IO (Either SomeException Int)
+
+    case result of
+        Right gameId -> return $ Success gameId
+        Left err -> return $ Error $ "Erro ao inserir game: " ++ show err
+
 authenticateUser :: Text -> Text -> IO (Result Int)
 authenticateUser email password = do
     let hashedPassword = hashPassword password
