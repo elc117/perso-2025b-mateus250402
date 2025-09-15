@@ -13,6 +13,7 @@ import Control.Exception (try, SomeException)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteArray as BA
+import Models.Games (Game)
 
 data Result a = Success a | Error String deriving (Show, Eq)
 
@@ -78,7 +79,7 @@ insertGame :: Int -> Text -> Double -> Text -> Maybe Text -> IO (Result Int)
 insertGame user_id title score platform cover_url = do
     result <- (try $do
             conn <- connectDB
-            execute conn "INSERT INTO games (id_user, title, score, platform, cover_url)"
+            execute conn "INSERT INTO games (user_id, title, score, platform, cover_url) VALUES (?, ?, ?, ?, ?)"
                 (user_id, title, score, platform, cover_url)
             gameId <- lastInsertRowId conn
             close conn
@@ -87,6 +88,13 @@ insertGame user_id title score platform cover_url = do
     case result of
         Right gameId -> return $ Success gameId
         Left err -> return $ Error $ "Erro ao inserir game: " ++ show err
+
+getGames :: Int -> IO [Game]
+getGames user_id = do
+        conn <- connectDB
+        games <- query conn "SELECT title, score, platform, cover_url FROM games WHERE user_id = ?" (Only user_id)
+        close conn
+        return games
 
 authenticateUser :: Text -> Text -> IO (Result Int)
 authenticateUser email password = do

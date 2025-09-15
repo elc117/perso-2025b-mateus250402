@@ -17,6 +17,7 @@ import qualified DB.DB as DB
 import qualified Utils.Session as Session
 import qualified Utils.Format as Format
 import qualified Api.Igdb as Igdb 
+import qualified Models.Games as Game
 
 main :: IO ()
 main = do
@@ -114,4 +115,10 @@ main = do
 
         -- Lista de jogos 
         get "/backlog" $ Session.requireAuth $ do
-            html $ renderText Backlog.backlogPage   
+            mUserId <- Session.sessionLookup "user_id"
+            case mUserId of
+                Just userIdStr -> do
+                    let userId = read userIdStr :: Int
+                    games <- liftIO $ DB.getGames userId
+                    html $ renderText $ Backlog.backlogPage games
+                Nothing -> redirect "/"
