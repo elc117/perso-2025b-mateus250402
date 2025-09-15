@@ -96,6 +96,12 @@ getGames user_id = do
         close conn
         return games
 
+deleteGame :: Int -> Text -> IO ()
+deleteGame userId title = do
+    conn <- connectDB
+    execute conn "DELETE FROM games WHERE title = ? AND user_id = ?" (title, userId)
+    close conn
+
 authenticateUser :: Text -> Text -> IO (Result Int)
 authenticateUser email password = do
     let hashedPassword = hashPassword password

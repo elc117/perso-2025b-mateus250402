@@ -5,23 +5,27 @@ module Main where
 
 import Web.Scotty (scotty, get, post, param, html, redirect, ActionM, body, rescue)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL      
 import Lucid (renderText)
 import Control.Monad.IO.Class (liftIO)
+import Control.Exception (SomeException)
+import Data.List (sortBy)
+
+-- Pages
 import qualified Pages.Index as Index
 import qualified Pages.Login as Login
 import qualified Pages.Register as Register
 import qualified Pages.AddGame as AddGame
 import qualified Pages.Backlog as Backlog
 import qualified Pages.Confirm as Confirm
-import qualified Data.Text.Lazy as TL      
-import qualified Data.Text as T          
+
+-- Utils e Models
 import qualified DB.DB as DB
 import qualified Utils.Session as Session
 import qualified Utils.Format as Format
+import qualified Utils.Data as Dt
 import qualified Api.Igdb as Igdb 
-import qualified Data.Text.Lazy as TL
 import qualified Models.Games as Game
-import Control.Exception (try, SomeException)
 
 main :: IO ()
 main = do
@@ -120,17 +124,44 @@ main = do
         -- Lista de jogos 
         get "/backlog" $ Session.requireAuth $ do
             mUserId <- Session.sessionLookup "user_id"
-            -- Captura o parâmetro como Maybe com tipo explícito
             maybePlatform <- (fmap Just (param "platform" :: ActionM TL.Text)) `rescue` ((\(_ :: SomeException) -> return Nothing) :: SomeException -> ActionM (Maybe TL.Text))
+            maybeSort <- (fmap Just (param "sort" :: ActionM TL.Text)) `rescue` ((\(_ :: SomeException) -> return Nothing) :: SomeException -> ActionM (Maybe TL.Text))
+            maybeSearch <- (fmap Just (param "search" :: ActionM TL.Text)) `rescue` ((\(_ :: SomeException) -> return Nothing) :: SomeException -> ActionM (Maybe TL.Text))
+            
             let platformFilter = case maybePlatform of
                     Nothing -> ""
                     Just p -> TL.toStrict p
+            
+            let searchFilter = case maybeSearch of
+                    Nothing -> ""
+                    Just s -> TL.toStrict s
+            
+            let sortByScore = case maybeSort of
+                    Just "score" -> True
+                    _ -> False
+
             case mUserId of
                 Just userIdStr -> do
                     let userId = read userIdStr :: Int
                     allGames <- liftIO $ DB.getGames userId
-                    let games = if platformFilter == ""
-                                then allGames
-                                else filter (\g -> Game.platform g == platformFilter) allGames
-                    html $ renderText $ Backlog.backlogPage games
+
+                    let filteredGames = Dt.filterGames allGames platformFilter searchFilter
+
+                    let sortedGames = if sortByScore
+                                     then sortBy (\a b -> compare (Game.score b) (Game.score a)) filteredGames
+                                     else filteredGames
+                        
+                    html $ renderText $ Backlog.backlogPage sortedGames
+
+                Nothing -> redirect "/login"
+
+        
+        post "/delete/:titulo" $ Session.requireAuth $ do
+            title <- param "titulo"
+            maybeIdUser <- Session.sessionLookup "user_id"
+            case maybeIdUser of
+                Just idUserStr -> do
+                    let idUser = read idUserStr
+                    liftIO $ DB.deleteGame idUser title
+                    redirect "/backlog"
                 Nothing -> redirect "/login"

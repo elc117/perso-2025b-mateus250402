@@ -20,17 +20,24 @@ backlogPage games = html_ $ do
                 a_ [class_ "navbar-brand", href_ "/"] "🎮 Games Backlog"
         div_ [class_ "container mt-5"] $ do
             h1_ [class_ "mb-4 text-center text-dark fw-bold"] "Meu Backlog"
+
             div_ [class_ "mb-4 text-center"] $ do
                 a_ [href_ "/add", class_ "btn btn-success me-2"] "Adicionar Jogo"
                 a_ [href_ "/", class_ "btn btn-outline-primary"] "Home"
+
             form_ [method_ "get", action_ "/backlog", class_ "mb-4 d-flex justify-content-center"] $ do
+                input_ [type_ "text", name_ "search", placeholder_ "Pesquisar jogos...", class_ "form-control me-2", style_ "max-width: 300px;"]
                 select_ [name_ "platform", class_ "form-select w-auto me-2"] $ do
                     option_ [value_ ""] "Todas"
                     option_ [value_ "PlayStation"] "PlayStation"
                     option_ [value_ "Nintendo"] "Nintendo"
                     option_ [value_ "PC"] "PC"
                     option_ [value_ "Xbox"] "Xbox"
+                select_ [name_ "sort", class_ "form-select w-auto me-2"] $ do
+                    option_ [value_ ""] "Sem ordenação"
+                    option_ [value_ "score"] "Ordenar por nota"
                 button_ [type_ "submit", class_ "btn btn-primary"] "Filtrar"
+                
             h2_ [class_ "mt-4 mb-3 text-secondary"] "Jogos Salvos"
             if null games
                 then p_ [class_ "text-center text-muted fs-4"] "Nenhum jogo salvo ainda."
@@ -42,7 +49,7 @@ backlogCard (Game title score platform cover_url) =
     let (cardBg, cardBorder) = case platform of
             "PlayStation" -> ("#e3ecfa", "#0050d9")
             "Nintendo"    -> ("#ffeaea", "#e60012")
-            "PC"          -> ("#f5f5f5", "#222")
+            "PC"          -> ("#e6e6e6ff", "#303030ff")
             "Xbox"        -> ("#eafaf1", "#107c10")
             _             -> ("#fff", "#bbb")
         cardStyle = T.concat
@@ -52,6 +59,9 @@ backlogCard (Game title score platform cover_url) =
             ]
     in div_ [style_ "flex: 1 1 31%; max-width: 31%; min-width: 300px; margin-right: 2%; margin-left: 0;"] $ 
         div_ [class_ "game-card mb-2 position-relative", style_ cardStyle] $ do
+            form_ [method_ "post", action_ ("/delete/" <> title), class_ "delete-form"] $
+                button_ [type_ "submit", class_ "delete-btn", title_ "Excluir jogo", onclick_ "return confirm('Tem certeza que deseja excluir este jogo?')"] "×"
+            
             div_ [class_ "game-img-col"] $
                 case cover_url of
                     Just url -> img_ [src_ url, class_ "game-cover", alt_ "Capa do jogo"]
@@ -72,4 +82,8 @@ customStyle = T.concat
     , ".game-info { font-size: 1rem; }"
     , ".game-col { padding: 0.8rem 1rem !important; display: flex; flex-direction: column; justify-content: center; height: 140px; }"
     , ".game-img-col { padding: 0 !important; display: flex; align-items: center; justify-content: flex-start; background: #f0f0f0; width: 120px; height: 140px; }"
+    , ".delete-form { position: absolute; top: 8px; right: 8px; z-index: 10; margin: 0; }"
+    , ".delete-btn { width: 28px; height: 28px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; line-height: 1; opacity: 0.6; transition: opacity 0.2s, transform 0.2s; background: transparent; border: none; color: #666; }"
+    , ".delete-btn:hover { opacity: 1; transform: scale(1.1); color: #dc3545; }"
+    , ".game-card:hover .delete-btn { opacity: 0.8; }"
     ]
