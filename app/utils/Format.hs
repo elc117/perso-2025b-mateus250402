@@ -12,8 +12,8 @@ parseFormData :: BSL.ByteString -> [(String, String)]
 parseFormData bodyLazy = 
     let bodyStrict = BSL.toStrict bodyLazy
         parsed = parseQuery bodyStrict
-    in map (\(k, v) -> 
-        let keyStr = T.unpack $ TE.decodeUtf8 k 
-            valStr = maybe "" (T.unpack . TE.decodeUtf8) v  
+    in map (\(key, value) -> 
+        let keyStr = T.unpack $ TE.decodeUtf8 key
+            valStr = maybe "" (T.unpack . TE.decodeUtf8) value
         in (keyStr, valStr)
     ) parsed

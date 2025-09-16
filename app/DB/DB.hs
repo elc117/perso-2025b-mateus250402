@@ -11,12 +11,10 @@ import qualified Data.Text.Encoding as TE
 import qualified Crypto.Hash as Hash    
 import qualified Data.ByteString.Base64 as B64  
 import Control.Exception (try, SomeException) 
-import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteArray as BA
 import Models.Games (Game)
 
-data Result a = Success a | Error String deriving (Show, Eq)
 
 dbPath :: String
 dbPath = "backlog.db"
@@ -24,6 +22,7 @@ dbPath = "backlog.db"
 connectDB :: IO Connection
 connectDB = open dbPath
 
+-- Inicializa o banco de dados, criando tabelas se não existirem
 initDB :: IO ()
 initDB = do
     conn <- connectDB
@@ -40,10 +39,8 @@ initDB = do
         [ "CREATE TABLE IF NOT EXISTS games ("
         , "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
         , "  user_id INTEGER NOT NULL,"
-        , "  igdb_id INTEGER,"
-        , "  name TEXT NOT NULL,"
+        , "  title TEXT NOT NULL,"
         , "  cover_url TEXT,"
-        , "  release_date TEXT,"
         , "  score REAL,"
         , "  platform TEXT,"
         , "  FOREIGN KEY (user_id) REFERENCES users (id)"
@@ -52,6 +49,7 @@ initDB = do
     
     close conn  
 
+-- Função para hashear a senha usando SHA256 e codificar em Base64
 hashPassword :: Text -> Text
 hashPassword password = 
     let passwordBytes = TE.encodeUtf8 password
@@ -60,7 +58,9 @@ hashPassword password =
         encoded = B64.encode digestBytes
     in TE.decodeUtf8 encoded
 
-insertUser :: Text -> Text -> IO (Result Int)
+
+
+insertUser :: Text -> Text -> IO (Either String Int) -- Retorna Sring em caso de erro ou Int (userId) em caso de sucesso
 insertUser email password = do
     let hashedPassword = hashPassword password
 
@@ -70,29 +70,31 @@ insertUser email password = do
             (email, hashedPassword)
         userId <- lastInsertRowId conn
         close conn
-        return (fromIntegral userId)) :: IO (Either SomeException Int)
+        return (fromIntegral userId)) :: IO (Either SomeException Int) -- Pode ser um erro de exceção ou o userId
 
     case result of
-        Right userId -> return $ Success userId 
-        Left err -> return $ Error $ "Erro ao inserir usuário: " ++ show err
+        Right userId -> return $ Right userId  
+        Left err -> return $ Left $ "Erro ao inserir usuário: " ++ show err
 
-insertGame :: Int -> Text -> Double -> Text -> Maybe Text -> IO (Result Int)
+insertGame :: Int -> Text -> Double -> Text -> Maybe Text -> IO (Either String Int) -- Retorna String em caso de erro ou Int (gameId) em caso de sucesso
 insertGame userId title score platform maybeCoverUrl = do
     conn <- connectDB
+
     result <- try $ do
         execute conn "INSERT INTO games (user_id, title, score, platform, cover_url) VALUES (?, ?, ?, ?, ?)" 
                 (userId, title, score, platform, maybeCoverUrl)
         lastId <- lastInsertRowId conn
         close conn
         return $ fromIntegral lastId
-    case result of
-        Left (_ :: SomeException) -> return $ Error "Erro ao inserir jogo no banco de dados"
-        Right gameId -> return $ Success gameId
 
+    case result of
+        Right gameId -> return $ Right gameId
+        Left (_ :: SomeException) -> return $ Left "Erro ao inserir jogo no banco de dados"
+        
 getGames :: Int -> IO [Game]
 getGames user_id = do
     conn <- connectDB
-    games <- query conn "SELECT id, title, score, platform, cover_url FROM games WHERE user_id = ? ORDER BY title ASC" (Only user_id)
+    games <- query conn "SELECT id, title, score, platform, cover_url FROM games WHERE user_id = ? ORDER BY title ASC" (Only user_id) 
     close conn
     return games
 
@@ -102,24 +104,24 @@ deleteGame gameId = do
     execute conn "DELETE FROM games WHERE id = ?" (Only gameId)
     close conn
 
-authenticateUser :: Text -> Text -> IO (Result Int)
+authenticateUser :: Text -> Text -> IO (Either String Int) 
 authenticateUser email password = do
     let hashedPassword = hashPassword password
 
     result <- (try $ do
         conn <- connectDB
-        row <- query conn "SELECT id, password_hash FROM users WHERE email = ?" (Only email) -- query espera uma tupla, por isso o Only
+        row <- query conn "SELECT id, password_hash FROM users WHERE email = ?" (Only email)
         close conn
 
         case row of
-            [] -> return Nothing -- Linha vazia, usuário não encontrado (Maybe Int)
+            [] -> return Nothing -- Linha vazia, usuário não encontrado
             (userId, storedHash):_ ->
                 if storedHash == hashedPassword
-                    then return (Just userId) -- Maybe Int
-                    else return Nothing -- Maybe Int
-        ) :: IO (Either SomeException (Maybe Int)) -- Indica que o retorno pode ser um Exceção ou um Int (id do usuário)
+                    then return (Just userId)
+                    else return Nothing
+        ) :: IO (Either SomeException (Maybe Int)) -- Pode ser um erro de exceção ou Maybe Int (userId)
 
     case result of
-        Right (Just userId) -> return $ Success userId
-        Right Nothing -> return $ Error "E-mail ou senha incorretos"
-        Left err -> return $ Error $ "Erro no DB" ++ show err
+        Right (Just userId) -> return $ Right userId -- Funcionou e encontrou o usuário
+        Right Nothing -> return $ Left "E-mail ou senha incorretos" -- Funcionou, mas não encontrou ou senha incorreta
+        Left err -> return $ Left $ "Erro no DB" ++ show err 

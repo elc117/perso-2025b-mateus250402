@@ -31,46 +31,44 @@ postLogin = do
     requestBody <- body
     let formData = Format.parseFormData requestBody
 
-    case (lookup "email" formData, lookup "password" formData) of 
-        (Just email, Just password) -> do
+    case (lookup "email" formData, lookup "password" formData) of -- Procura email e senha no formData
+        (Just email, Just password) -> do -- lookup pode retornar Nothing ou Just valor
             result <- liftIO $ DB.authenticateUser (T.pack email) (T.pack password)
             case result of
-                DB.Success userId -> do
+                Right userId -> do
                     Session.sessionInsert "user_id" (show userId)
                     redirect "/"
-                DB.Error msg -> do
+                Left msg -> do
                     html $ TL.pack $ "Erro: " ++ msg
-        _ -> do
-            html "Email ou senha incorretos"
+        _ -> html "Email ou senha incorretos" -- Captura qualquer outro caso
 
 postRegister :: ActionM ()
 postRegister = do
     requestBody <- body
     let formData = Format.parseFormData requestBody
 
-    case (lookup "email" formData, lookup "password" formData) of
+    case (lookup "email" formData, lookup "password" formData) of -- Procura email e senha no formData
         (Just email, Just password) -> do
             result <- liftIO $ DB.insertUser (T.pack email) (T.pack password)
             case result of
-                DB.Success userId -> redirect "/login"
-                DB.Error msg -> html $ TL.pack $ "Erro: " ++ msg
-        _ -> do
-            html "Erro: email ou senha não encontrados"
+                Right userId -> redirect "/login"
+                Left msg -> html $ TL.pack $ "Erro: " ++ msg
+        _ -> html "Erro: email ou senha não encontrados" -- Captura qualquer outro caso
 
 postAdd :: ActionM ()
 postAdd = do
     requestBody <- body
     let formData = Format.parseFormData requestBody
     
-    case (lookup "name" formData, lookup "score" formData, lookup "platform" formData) of
+    case (lookup "name" formData, lookup "score" formData, lookup "platform" formData) of -- Procura name, score e platform no formData
         (Just name, Just score, Just platform) -> do
             gameResults <- liftIO $ Igdb.searchMultipleGames (T.pack name)
             
             case gameResults of
-                [] -> 
+                [] ->  -- Nenhum jogo encontrado, redireciona para a página de confirmação sem cover_url
                     redirect $ TL.concat ["/confirm?name=", TL.pack name, "&score=", TL.pack score, "&platform=", TL.pack platform]
                 
-                [singleGame] -> 
+                [singleGame] ->  -- Um único jogo encontrado, redireciona para a página de confirmação com cover_url
                     redirect $ TL.concat 
                         [ "/confirm?name=", TL.fromStrict (Igdb.grName singleGame)
                         , "&score=", TL.pack score
@@ -78,9 +76,8 @@ postAdd = do
                         , "&cover_url=", maybe "" TL.fromStrict (Igdb.grCoverUrl singleGame)
                         ]
                 
-                multipleGames -> 
+                multipleGames -> -- Múltiplos jogos encontrados, mostra a página de seleção
                     html $ renderText $ Selection.gameSelectionPage (T.pack name) (T.pack score) (T.pack platform) multipleGames
-        
         _ -> html "Dados inválidos"
 
 postConfirm :: ActionM ()
@@ -96,15 +93,15 @@ postConfirm = do
             
             -- Pegar a cover_url do formulário
             let maybeCoverUrl = case lookup "cover_url" formData of
-                    Just "" -> Nothing
+                    Just "" -> Nothing 
                     Just url -> Just (T.pack url)
                     Nothing -> Nothing
 
             result <- liftIO $ DB.insertGame userId (T.pack name) scoreDouble (T.pack platform) maybeCoverUrl
             case result of
-                DB.Success _ -> redirect "/backlog"
-                DB.Error msg -> html $ TL.pack $ "Erro ao salvar: " ++ msg
-        _ -> html "Dados inválidos ou usuário não autenticado"
+                Right _ -> redirect "/add"
+                Left msg -> html $ TL.pack $ "Erro ao salvar: " ++ msg
+        _ -> html "Dados inválidos ou usuário não autenticado" -- Captura qualquer outro caso
 
 postDelete :: ActionM ()
 postDelete = do
@@ -118,20 +115,16 @@ getLogout = do
     redirect "/"
 
 getIndex :: ActionM ()
-getIndex = do
-    html $ renderText Index.indexPage
+getIndex = html $ renderText Index.indexPage
 
 getLogin :: ActionM ()
-getLogin = do
-    html $ renderText Login.loginPage
+getLogin = html $ renderText Login.loginPage
 
 getRegister :: ActionM ()
-getRegister = do
-    html $ renderText Register.registerPage
+getRegister = html $ renderText Register.registerPage
 
 getAdd :: ActionM ()
-getAdd = do
-    html $ renderText AddGame.addGamePage
+getAdd = html $ renderText AddGame.addGamePage
 
 getConfirm :: ActionM ()
 getConfirm = do
@@ -151,9 +144,9 @@ getConfirm = do
 getBacklog :: ActionM ()
 getBacklog = do
     mUserId <- Session.sessionLookup "user_id"
-    maybePlatform <- (fmap Just (param "platform" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing)
-    maybeSort <- (fmap Just (param "sort" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing)
-    maybeSearch <- (fmap Just (param "search" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing)
+    maybePlatform <- (fmap Just (param "platform" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing) -- Resgata o parâmetro "platform" se existir
+    maybeSort <- (fmap Just (param "sort" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing) -- Resgata o parâmetro "sort" se existir
+    maybeSearch <- (fmap Just (param "search" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing) -- Resgata o parâmetro "search" se existir
     
     let platformFilter = case maybePlatform of
             Nothing -> ""
@@ -169,7 +162,7 @@ getBacklog = do
 
     case mUserId of
         Just userIdStr -> do
-            let userId = read userIdStr :: Int
+            let userId = read userIdStr :: Int -- Converte userId para Int
             allGames <- liftIO $ DB.getGames userId
 
             let filteredGames = Dt.filterGames allGames platformFilter searchFilter
@@ -179,13 +172,12 @@ getBacklog = do
                                 else filteredGames
                 
             html $ renderText $ Backlog.backlogPage sortedGames
-
         Nothing -> redirect "/login"
 
 getGameSelection :: ActionM ()
 getGameSelection = do
     name <- param "name"
     score <- param "score"
-    platform <- param "platform"  -- Adicionar este parâmetro
+    platform <- param "platform"  
     gameResults <- liftIO $ Igdb.searchMultipleGames (TL.toStrict name)
     html $ renderText $ Selection.gameSelectionPage (TL.toStrict name) (TL.toStrict score) (TL.toStrict platform) gameResults

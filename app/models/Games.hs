@@ -14,5 +14,6 @@ data Game = Game
     , cover_url :: Maybe Text
     } deriving (Show, Eq)
 
+-- Implementação da instância FromRow para mapear resultados de consultas SQL para o tipo Game
 instance FromRow Game where
-    fromRow = Game <$> field <*> field <*> field <*> field <*> field
+    fromRow = Game <$> field <*> field <*> field <*> field <*> field -- id, title, score, platform, cover_url

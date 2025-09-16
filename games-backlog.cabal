@@ -20,38 +20,41 @@ executable games-backlog
     main-is:          Main.hs
 
     -- Módulos do projeto
-    other-modules:    DB.DB, 
-                      Pages.Index, Pages.Backlog, Pages.AddGame,
-                      Pages.Register, Pages.Login
+    other-modules:    Api.Igdb,
+                      DB.DB,
+                      Models.Games,
+                      Pages.AddGame,
+                      Pages.Backlog,
+                      Pages.Confirm,
+                      Pages.Index,
+                      Pages.Login,
+                      Pages.Register,
+                      Pages.Selection,
+                      Utils.Data,
+                      Utils.Format,
+                      Utils.Handles,
+                      Utils.Session
 
     -- Linguagem e extensões
     default-language: Haskell2010
-    other-extensions: OverloadedStrings, RecordWildCards, DeriveGeneric
+    other-extensions: OverloadedStrings
 
-    -- Dependências
-    build-depends:  base ^>=4.18.3.0,
-                    scotty,
-                    lucid,
-                    wreq,
-                    aeson,
-                    text,
-                    lens,
-                    bytestring,
-                    http-client,
-                    time,
-                    sqlite-simple,
-                    mtl,
-                    containers,
-                    bcrypt,
-                    crypton,
-                    base64-bytestring,
-                    memory,
-                    wai-extra,
-                    http-types,
-                    cookie,              
-                    blaze-builder,       
-                    wai,
-                    http-conduit           
+    -- Dependências 
+    build-depends:    base ^>=4.18.3.0,
+                      scotty,
+                      lucid,
+                      aeson,
+                      text,
+                      bytestring,
+                      sqlite-simple,
+                      crypton,
+                      base64-bytestring,
+                      memory,
+                      http-types,
+                      cookie,
+                      blaze-builder,
+                      wai,
+                      http-conduit
 
     -- Diretório com os arquivos Haskell
     hs-source-dirs:   app

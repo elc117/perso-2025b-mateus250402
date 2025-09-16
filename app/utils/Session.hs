@@ -29,13 +29,13 @@ sessionInsert key value = do
 sessionLookup :: String -> ActionM (Maybe String)
 sessionLookup key = do
     req <- request
-    let headers = requestHeaders req
-    case lookup "Cookie" headers of
+    let headers = requestHeaders req -- Obtém todos os cabeçalhos da requisição
+    case lookup "Cookie" headers of -- Obtém o cabeçalho "Cookie"
         Nothing -> return Nothing
         Just cookieHeader -> do
-            let cookies = parseCookies cookieHeader
-                keyBS = TE.encodeUtf8 $ T.pack key
-            case lookup keyBS cookies of
+            let cookies = parseCookies cookieHeader -- Analisa os cookies em uma lista de pares (ByteString, ByteString)
+                keyBS = TE.encodeUtf8 $ T.pack key 
+            case lookup keyBS cookies of -- Procura o cookie pela chave
                 Nothing -> return Nothing
                 Just valueBS -> return $ Just $ T.unpack $ TE.decodeUtf8 valueBS
 
