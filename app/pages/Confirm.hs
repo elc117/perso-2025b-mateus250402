@@ -39,8 +39,10 @@ confirmPage name score platform maybeCover = html_ $ do
                         input_ [type_ "hidden", name_ "name", value_ name]
                         input_ [type_ "hidden", name_ "score", value_ score]
                         input_ [type_ "hidden", name_ "platform", value_ platform]
+                        case maybeCover of
+                            Just coverUrl -> input_ [type_ "hidden", name_ "cover_url", value_ coverUrl]
+                            Nothing -> input_ [type_ "hidden", name_ "cover_url", value_ ""]
                         button_ [type_ "submit", class_ "btn btn-success btn-lg px-5"] "Confirmar e Salvar"
-                    a_ [href_ "/add", class_ "btn btn-secondary btn-lg ms-3"] "Voltar"
   where
     (cardBg, cardBorder) = case platform of
         "PlayStation" -> ("#e3ecfa", "#0050d9")

@@ -30,8 +30,10 @@ main = do
 
         get "/backlog" $ Session.requireAuth $ do Hd.getBacklog
 
+        get "/game-selection" $ Session.requireAuth $ do Hd.getGameSelection
+
         get "/confirm" $ Session.requireAuth $ do Hd.getConfirm
         post "/confirm" $Session.requireAuth $ do Hd.postConfirm
 
-        post "/delete/:titulo" $ Session.requireAuth $ do Hd.postDelete
+        post "/delete/:id" $ Session.requireAuth $ do Hd.postDelete
             

@@ -24,6 +24,7 @@ import qualified Pages.AddGame as AddGame
 import qualified Api.Igdb as Igdb
 import qualified Utils.Data as Dt
 import qualified Models.Games as Game
+import qualified Pages.Selection as Selection
 
 postLogin :: ActionM ()
 postLogin = do
@@ -63,41 +64,53 @@ postAdd = do
     
     case (lookup "name" formData, lookup "score" formData, lookup "platform" formData) of
         (Just name, Just score, Just platform) -> do
-            let url = TL.concat ["/confirm?name=", TL.pack name, "&score=", TL.pack score, "&platform=", TL.pack platform]
-            redirect url
-        _ -> do
-            html "Erro: dados do formulário incompletos"
+            gameResults <- liftIO $ Igdb.searchMultipleGames (T.pack name)
+            
+            case gameResults of
+                [] -> 
+                    redirect $ TL.concat ["/confirm?name=", TL.pack name, "&score=", TL.pack score, "&platform=", TL.pack platform]
+                
+                [singleGame] -> 
+                    redirect $ TL.concat 
+                        [ "/confirm?name=", TL.fromStrict (Igdb.grName singleGame)
+                        , "&score=", TL.pack score
+                        , "&platform=", TL.pack platform
+                        , "&cover_url=", maybe "" TL.fromStrict (Igdb.grCoverUrl singleGame)
+                        ]
+                
+                multipleGames -> 
+                    html $ renderText $ Selection.gameSelectionPage (T.pack name) (T.pack score) (T.pack platform) multipleGames
+        
+        _ -> html "Dados inválidos"
 
-postConfirm :: ActionM  ()
-postConfirm = do 
+postConfirm :: ActionM ()
+postConfirm = do
     requestBody <- body
     let formData = Format.parseFormData requestBody
     mUserId <- Session.sessionLookup "user_id"
 
-    case (lookup "name" formData, lookup "score" formData, lookup "platform" formData, mUserId) of
-        (Just name, Just score, Just platform, Just userIdStr) -> do
-            maybeCover <- liftIO $ Igdb.searchGameCover (T.pack name)
-            let coverUrl = maybe "" id maybeCover
+    case (mUserId, lookup "name" formData, lookup "score" formData, lookup "platform" formData) of
+        (Just userIdStr, Just name, Just score, Just platform) -> do
+            let userId = read userIdStr :: Int
+            let scoreDouble = read score :: Double
+            
+            -- Pegar a cover_url do formulário
+            let maybeCoverUrl = case lookup "cover_url" formData of
+                    Just "" -> Nothing
+                    Just url -> Just (T.pack url)
+                    Nothing -> Nothing
 
-            _ <- liftIO $ DB.insertGame
-                (read userIdStr) -- user_id como Int
-                (T.pack name)
-                (read score :: Double)
-                (T.pack platform)
-                maybeCover
-            redirect "/add"
-        _ -> html "Erro ao salvar jogo"
+            result <- liftIO $ DB.insertGame userId (T.pack name) scoreDouble (T.pack platform) maybeCoverUrl
+            case result of
+                DB.Success _ -> redirect "/backlog"
+                DB.Error msg -> html $ TL.pack $ "Erro ao salvar: " ++ msg
+        _ -> html "Dados inválidos ou usuário não autenticado"
 
 postDelete :: ActionM ()
 postDelete = do
-    title <- param "titulo"
-    maybeIdUser <- Session.sessionLookup "user_id"
-    case maybeIdUser of
-        Just idUserStr -> do
-            let idUser = read idUserStr
-            liftIO $ DB.deleteGame idUser title
-            redirect "/backlog"
-        Nothing -> redirect "/login"
+    gameId <- param "id"
+    liftIO $ DB.deleteGame gameId
+    redirect "/backlog"
 
 getLogout :: ActionM ()
 getLogout = do
@@ -125,7 +138,13 @@ getConfirm = do
     name <- param "name"
     score <- param "score"
     platform <- param "platform"
-    maybeCover <- liftIO $ Igdb.searchGameCover (TL.toStrict name)
+    -- Pegar a cover_url que foi enviada via parâmetro GET
+    maybeCoverParam <- (fmap Just (param "cover_url" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing)
+    
+    let maybeCover = case maybeCoverParam of
+            Just "" -> Nothing  -- Se for string vazia, considerar como Nothing
+            Just url -> Just (TL.toStrict url)
+            Nothing -> Nothing
     
     html $ renderText $ Confirm.confirmPage (TL.toStrict name) (TL.toStrict score) (TL.toStrict platform) maybeCover
 
@@ -162,3 +181,11 @@ getBacklog = do
             html $ renderText $ Backlog.backlogPage sortedGames
 
         Nothing -> redirect "/login"
+
+getGameSelection :: ActionM ()
+getGameSelection = do
+    name <- param "name"
+    score <- param "score"
+    platform <- param "platform"  -- Adicionar este parâmetro
+    gameResults <- liftIO $ Igdb.searchMultipleGames (TL.toStrict name)
+    html $ renderText $ Selection.gameSelectionPage (TL.toStrict name) (TL.toStrict score) (TL.toStrict platform) gameResults

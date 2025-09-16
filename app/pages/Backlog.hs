@@ -45,7 +45,7 @@ backlogPage games = html_ $ do
                         mapM_ backlogCard games
 
 backlogCard :: Game -> Html ()
-backlogCard (Game title score platform cover_url) =
+backlogCard (Game gId title score platform cover_url) =
     let (cardBg, cardBorder) = case platform of
             "PlayStation" -> ("#e3ecfa", "#0050d9")
             "Nintendo"    -> ("#ffeaea", "#e60012")
@@ -59,7 +59,8 @@ backlogCard (Game title score platform cover_url) =
             ]
     in div_ [style_ "flex: 1 1 31%; max-width: 31%; min-width: 300px; margin-right: 2%; margin-left: 0;"] $ 
         div_ [class_ "game-card mb-2 position-relative", style_ cardStyle] $ do
-            form_ [method_ "post", action_ ("/delete/" <> title), class_ "delete-form"] $
+            -- Botão de excluir usando o id do jogo
+            form_ [method_ "post", action_ ("/delete/" <> T.pack (show gId)), class_ "delete-form"] $
                 button_ [type_ "submit", class_ "delete-btn", title_ "Excluir jogo", onclick_ "return confirm('Tem certeza que deseja excluir este jogo?')"] "×"
             
             div_ [class_ "game-img-col"] $

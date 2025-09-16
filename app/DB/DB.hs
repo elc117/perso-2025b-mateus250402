@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module DB.DB where
 
@@ -76,30 +77,29 @@ insertUser email password = do
         Left err -> return $ Error $ "Erro ao inserir usuário: " ++ show err
 
 insertGame :: Int -> Text -> Double -> Text -> Maybe Text -> IO (Result Int)
-insertGame user_id title score platform cover_url = do
-    result <- (try $do
-            conn <- connectDB
-            execute conn "INSERT INTO games (user_id, title, score, platform, cover_url) VALUES (?, ?, ?, ?, ?)"
-                (user_id, title, score, platform, cover_url)
-            gameId <- lastInsertRowId conn
-            close conn
-            return (fromIntegral gameId)) :: IO (Either SomeException Int)
-
+insertGame userId title score platform maybeCoverUrl = do
+    conn <- connectDB
+    result <- try $ do
+        execute conn "INSERT INTO games (user_id, title, score, platform, cover_url) VALUES (?, ?, ?, ?, ?)" 
+                (userId, title, score, platform, maybeCoverUrl)
+        lastId <- lastInsertRowId conn
+        close conn
+        return $ fromIntegral lastId
     case result of
+        Left (_ :: SomeException) -> return $ Error "Erro ao inserir jogo no banco de dados"
         Right gameId -> return $ Success gameId
-        Left err -> return $ Error $ "Erro ao inserir game: " ++ show err
 
 getGames :: Int -> IO [Game]
 getGames user_id = do
-        conn <- connectDB
-        games <- query conn "SELECT title, score, platform, cover_url FROM games WHERE user_id = ?" (Only user_id)
-        close conn
-        return games
-
-deleteGame :: Int -> Text -> IO ()
-deleteGame userId title = do
     conn <- connectDB
-    execute conn "DELETE FROM games WHERE title = ? AND user_id = ?" (title, userId)
+    games <- query conn "SELECT id, title, score, platform, cover_url FROM games WHERE user_id = ? ORDER BY title ASC" (Only user_id)
+    close conn
+    return games
+
+deleteGame :: Int -> IO ()
+deleteGame gameId = do
+    conn <- connectDB
+    execute conn "DELETE FROM games WHERE id = ?" (Only gameId)
     close conn
 
 authenticateUser :: Text -> Text -> IO (Result Int)

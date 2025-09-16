@@ -1,17 +1,18 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Models.Games where
 
-import GHC.Generics
+import Database.SQLite.Simple.FromRow
+import Database.SQLite.Simple
 import Data.Text (Text)
-import Database.SQLite.Simple.FromRow (FromRow(..), field)
 
 data Game = Game
-    { title :: Text
+    { gameId :: Int
+    , title :: Text
     , score :: Double
     , platform :: Text
     , cover_url :: Maybe Text
-    } deriving (Show, Generic)
+    } deriving (Show, Eq)
 
 instance FromRow Game where
-    fromRow = Game <$> field <*> field <*> field <*> field
+    fromRow = Game <$> field <*> field <*> field <*> field <*> field
