@@ -25,13 +25,13 @@ gameSelectionPage originalName score originalPlatform gameResults = html_ $ do
             p_ [class_ "text-center text-muted mb-4"] $ "Encontramos " <> toHtml (show $ length gameResults) <> " jogos com o nome \"" <> toHtml originalName <> "\". Selecione o correto:"
             
             div_ [class_ "row"] $
-                mapM_ (gameSelectionCard originalName score originalPlatform) gameResults
+                mapM_ (gameSelectionCard score originalPlatform) gameResults
             
             div_ [class_ "text-center mt-4"] $
                 a_ [href_ "/add", class_ "btn btn-secondary"] "Voltar"
 
-gameSelectionCard :: Text -> Text -> Text -> GameResult -> Html ()
-gameSelectionCard originalName score originalPlatform (GameResult name platforms year coverUrl) = 
+gameSelectionCard :: Text -> Text -> GameResult -> Html ()
+gameSelectionCard score originalPlatform (GameResult name _ year coverUrl) = 
     div_ [class_ "col-md-6 col-lg-4 mb-4"] $
         div_ [class_ "card h-100 game-selection-card"] $ do
             case coverUrl of

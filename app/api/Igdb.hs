@@ -8,7 +8,6 @@ import Data.Aeson
 import Data.Aeson.Types (Parser, parseEither)
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy.Char8 as LBS
-import Control.Exception (try, SomeException)
 import Data.Maybe (mapMaybe)
 
 data GameResult = GameResult

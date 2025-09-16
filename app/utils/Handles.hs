@@ -1,15 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wno-deprecations #-}
 
 module Utils.Handles where
 
-import Web.Scotty (ActionM, body, html, redirect, param, rescue)
+import Web.Scotty (ActionM, body, html, redirect, rescue, pathParam, queryParam)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Control.Monad.IO.Class (liftIO)
-import Control.Exception (SomeException)
 import Data.List (sortBy)
 import Lucid (renderText)
+import Control.Exception (SomeException)
 
 -- Módulos internos
 import qualified DB.DB as DB
@@ -51,7 +52,7 @@ postRegister = do
         (Just email, Just password) -> do
             result <- liftIO $ DB.insertUser (T.pack email) (T.pack password)
             case result of
-                Right userId -> redirect "/login"
+                Right _ -> redirect "/login"    
                 Left msg -> html $ TL.pack $ "Erro: " ++ msg
         _ -> html "Erro: email ou senha não encontrados" -- Captura qualquer outro caso
 
@@ -105,7 +106,7 @@ postConfirm = do
 
 postDelete :: ActionM ()
 postDelete = do
-    gameId <- param "id"
+    gameId <- pathParam "id"
     liftIO $ DB.deleteGame gameId
     redirect "/backlog"
 
@@ -126,28 +127,15 @@ getRegister = html $ renderText Register.registerPage
 getAdd :: ActionM ()
 getAdd = html $ renderText AddGame.addGamePage
 
-getConfirm :: ActionM ()
-getConfirm = do
-    name <- param "name"
-    score <- param "score"
-    platform <- param "platform"
-    -- Pegar a cover_url que foi enviada via parâmetro GET
-    maybeCoverParam <- (fmap Just (param "cover_url" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing)
-    
-    let maybeCover = case maybeCoverParam of
-            Just "" -> Nothing  -- Se for string vazia, considerar como Nothing
-            Just url -> Just (TL.toStrict url)
-            Nothing -> Nothing
-    
-    html $ renderText $ Confirm.confirmPage (TL.toStrict name) (TL.toStrict score) (TL.toStrict platform) maybeCover
-
 getBacklog :: ActionM ()
 getBacklog = do
     mUserId <- Session.sessionLookup "user_id"
-    maybePlatform <- (fmap Just (param "platform" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing) -- Resgata o parâmetro "platform" se existir
-    maybeSort <- (fmap Just (param "sort" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing) -- Resgata o parâmetro "sort" se existir
-    maybeSearch <- (fmap Just (param "search" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing) -- Resgata o parâmetro "search" se existir
-    
+
+    -- Usar rescue para tratar parâmetros opcionais com anotações de tipo
+    maybePlatform <- (fmap Just (queryParam "platform" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing)
+    maybeSort <- (fmap Just (queryParam "sort" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing)
+    maybeSearch <- (fmap Just (queryParam "search" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing)
+
     let platformFilter = case maybePlatform of
             Nothing -> ""
             Just p -> TL.toStrict p
@@ -162,7 +150,7 @@ getBacklog = do
 
     case mUserId of
         Just userIdStr -> do
-            let userId = read userIdStr :: Int -- Converte userId para Int
+            let userId = read userIdStr :: Int
             allGames <- liftIO $ DB.getGames userId
 
             let filteredGames = Dt.filterGames allGames platformFilter searchFilter
@@ -174,10 +162,25 @@ getBacklog = do
             html $ renderText $ Backlog.backlogPage sortedGames
         Nothing -> redirect "/login"
 
+getConfirm :: ActionM ()
+getConfirm = do
+    name <- queryParam "name"
+    score <- queryParam "score"
+    platform <- queryParam "platform"
+    
+    -- Usar rescue para tratar o parâmetro opcional cover_url com anotação de tipo
+    maybeCoverParam <- (fmap Just (queryParam "cover_url" :: ActionM TL.Text)) `rescue` (\(_ :: SomeException) -> return Nothing)
+
+    let maybeCover = case maybeCoverParam of
+            Just url | not (TL.null url) -> Just (TL.toStrict url)
+            _ -> Nothing
+    
+    html $ renderText $ Confirm.confirmPage (TL.toStrict name) (TL.toStrict score) (TL.toStrict platform) maybeCover
+
 getGameSelection :: ActionM ()
 getGameSelection = do
-    name <- param "name"
-    score <- param "score"
-    platform <- param "platform"  
+    name <- queryParam "name"
+    score <- queryParam "score"
+    platform <- queryParam "platform"
     gameResults <- liftIO $ Igdb.searchMultipleGames (TL.toStrict name)
     html $ renderText $ Selection.gameSelectionPage (TL.toStrict name) (TL.toStrict score) (TL.toStrict platform) gameResults

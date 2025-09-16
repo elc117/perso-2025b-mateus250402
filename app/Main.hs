@@ -33,7 +33,7 @@ main = do
         get "/game-selection" $ Session.requireAuth $ do Hd.getGameSelection
 
         get "/confirm" $ Session.requireAuth $ do Hd.getConfirm
-        post "/confirm" $Session.requireAuth $ do Hd.postConfirm
+        post "/confirm" $ Session.requireAuth $ do Hd.postConfirm
 
         post "/delete/:id" $ Session.requireAuth $ do Hd.postDelete
             

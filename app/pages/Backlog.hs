@@ -45,8 +45,8 @@ backlogPage games = html_ $ do
                         mapM_ backlogCard games
 
 backlogCard :: Game -> Html ()
-backlogCard (Game gId title score platform cover_url) =
-    let (cardBg, cardBorder) = case platform of
+backlogCard (Game gId gTitle gScore gPlatform gCoverUrl) =
+    let (cardBg, cardBorder) = case gPlatform of
             "PlayStation" -> ("#e3ecfa", "#0050d9")
             "Nintendo"    -> ("#ffeaea", "#e60012")
             "PC"          -> ("#e6e6e6ff", "#303030ff")
@@ -64,13 +64,13 @@ backlogCard (Game gId title score platform cover_url) =
                 button_ [type_ "submit", class_ "delete-btn", title_ "Excluir jogo", onclick_ "return confirm('Tem certeza que deseja excluir este jogo?')"] "×"
             
             div_ [class_ "game-img-col"] $
-                case cover_url of
+                case gCoverUrl of
                     Just url -> img_ [src_ url, class_ "game-cover", alt_ "Capa do jogo"]
                     Nothing  -> div_ [class_ "bg-secondary text-white text-center rounded w-100", style_ "height:140px; display:flex; align-items:center; justify-content:center;"] "Sem capa disponível"
             div_ [class_ "game-col flex-grow-1"] $ do
-                div_ [class_ "game-title mb-1"] $ toHtml title
-                div_ [class_ "game-info mb-1"] $ strong_ "Nota: " <> toHtml (show score)
-                div_ [class_ "game-info mb-1"] $ strong_ "Plataforma: " <> toHtml platform
+                div_ [class_ "game-title mb-1"] $ toHtml gTitle
+                div_ [class_ "game-info mb-1"] $ strong_ "Nota: " <> toHtml (show gScore)
+                div_ [class_ "game-info mb-1"] $ strong_ "Plataforma: " <> toHtml gPlatform
 
 customStyle :: Text
 customStyle = T.concat

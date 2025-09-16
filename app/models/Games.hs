@@ -3,7 +3,6 @@
 module Models.Games where
 
 import Database.SQLite.Simple.FromRow
-import Database.SQLite.Simple
 import Data.Text (Text)
 
 data Game = Game

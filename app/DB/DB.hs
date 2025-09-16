@@ -4,14 +4,12 @@
 module DB.DB where
 
 import Database.SQLite.Simple
-import Database.SQLite.Simple.FromRow
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE  
 import qualified Crypto.Hash as Hash    
 import qualified Data.ByteString.Base64 as B64  
 import Control.Exception (try, SomeException) 
-import qualified Data.ByteString as BS
 import qualified Data.ByteArray as BA
 import Models.Games (Game)
 

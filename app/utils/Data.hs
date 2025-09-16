@@ -3,7 +3,6 @@
 module Utils.Data where
 
 import qualified Data.Text as T
-import Data.Text (Text)
 import Models.Games (Game(..))
 
 filterGames :: [Game] -> T.Text -> T.Text -> [Game]
