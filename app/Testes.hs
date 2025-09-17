@@ -13,7 +13,7 @@ import Models.Games (Game(..))
 
 testFilterGames :: Spec
 testFilterGames = do
-    describe "filterGames" $ do -- Título da suíte de testes
+    describe "========== Filter Tests ==========" $ do -- Título da suíte de testes
 
         let games = [ Game 1 "God of War" 9 "Playstation" Nothing
                     , Game 2 "Halo" 8 "Xbox" Nothing
@@ -46,7 +46,7 @@ testFilterGames = do
 
 testDB :: Spec
 testDB = do
-    describe "Database operations" $ do
+    describe "========== Database Tests ==========" $ do
 
         it "insert user" $ do
             let email = "test@example.com"
@@ -54,8 +54,24 @@ testDB = do
             result <- DB.insertUser email password
             case result of
                 Right _ -> True `shouldBe` True  -- Sucesso esperado
-                Left _  -> expectationFailure "Falha ao inserir usuário"
-        
+                Left _  -> expectationFailure "Failed to insert user"
+
+        it "hash password" $ do
+            let password = "password123"
+            let hashed1 = DB.hashPassword (T.pack password)
+            let hashed2 = DB.hashPassword (T.pack password)
+
+            hashed1 `shouldBe` hashed2
+            hashed1 `shouldNotBe` T.pack password
+
+        it "authenticate user" $ do
+            let email = "test@example.com"
+                password = "password123"
+            result <- DB.authenticateUser (T.pack email) (T.pack password)
+            case result of
+                Right _ -> True `shouldBe` True  -- Sucesso esperado
+                Left _  -> expectationFailure "Failed to authenticate user"
+
         it "delete user" $ do
             let email = "test@example.com"
             delResult <- DB.deleteUser (T.pack email)
@@ -64,16 +80,36 @@ testDB = do
         it "not insert duplicate user" $ do
             let email = "repeated@example.com"
                 password = "password123"
-            
             _ <- DB.insertUser (T.pack email) (T.pack password) -- Primeiro inserção deve ser bem-sucedida
             result <- DB.insertUser (T.pack email) (T.pack password)
             case result of
                 Left _  -> True `shouldBe` True  -- Esperado: falha ao tentar inserir duplicado
-                Right _ -> expectationFailure "Usuário duplicado foi inserido, mas deveria falhar"
+                Right _ -> expectationFailure "Duplicate user insertion should fail"
             _ <- DB.deleteUser (T.pack email) -- Limpeza
             return ()
 
+        it "insert and delete game" $ do
+            result <- DB.insertGame 999 (T.pack "The Witcher 3") 10 (T.pack "PC") (Just (T.pack "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wyy.jpg"))
+            case result of
+                Right gameId -> DB.deleteGame gameId
+                Left _  -> expectationFailure "Failed to insert game"
+            return ()
+        
+        it "get games for user" $ do
+            let userId = 999
+            r1 <- DB.insertGame userId (T.pack "The Witcher 3") 10 (T.pack "PC") (Just (T.pack "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wyy.jpg"))
+            r2 <- DB.insertGame userId (T.pack "Minecraft") 9 (T.pack "PC") (Just (T.pack "https://images.igdb.com/igdb/image/upload/t_cover_big/co8fu7.jpg"))
+            r3 <- DB.insertGame userId (T.pack "Baldur's Gate 3") 10 (T.pack "PC") (Just (T.pack "https://images.igdb.com/igdb/image/upload/t_cover_big/co670h.jpg"))
+            case (r1, r2, r3) of
+                (Right gameId1, Right gameId2, Right gameId3) -> do
+                    games <- DB.getGames userId
+                    length games `shouldBe` 3
+                    map title games `shouldContain` ["Baldur's Gate 3", "Minecraft", "The Witcher 3"]
+                    mapM_ DB.deleteGame [gameId1, gameId2, gameId3]
+                _ -> expectationFailure "Failed to insert games"         
+            return ()
+
 main :: IO ()
-main = hspec $ do
-    testFilterGames
-    testDB
+main = do
+    hspec testFilterGames 
+    hspec testDB
