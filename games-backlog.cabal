@@ -54,7 +54,38 @@ executable games-backlog
                       cookie,
                       blaze-builder,
                       wai,
-                      http-conduit
+                      http-conduit,
+                      hspec
 
     -- Diretório com os arquivos Haskell
     hs-source-dirs:   app
+
+test-suite games-backlog-test
+    type:               exitcode-stdio-1.0
+    hs-source-dirs:     app
+    main-is:            Testes.hs
+
+    build-depends:      base,
+                        hspec,
+                        text,
+                        scotty,
+                        lucid,
+                        aeson,
+                        bytestring,
+                        sqlite-simple,
+                        crypton,
+                        base64-bytestring,
+                        memory,
+                        http-types,
+                        cookie,
+                        blaze-builder,
+                        wai,
+                        QuickCheck
+
+    other-modules:      Utils.Data,
+                        Utils.Format,
+                        Models.Games,
+                        DB.DB
+
+    default-language:   Haskell2010
+    other-extensions:   OverloadedStrings

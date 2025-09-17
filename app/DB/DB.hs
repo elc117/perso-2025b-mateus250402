@@ -56,7 +56,14 @@ hashPassword password =
         encoded = B64.encode digestBytes
     in TE.decodeUtf8 encoded
 
-
+-- Função para auxiliar nos testes
+deleteUser :: Text -> IO Bool
+deleteUser email = do
+    conn <- connectDB
+    execute conn "DELETE FROM users WHERE email = ?" (Only email)
+    rows <- query conn "SELECT id FROM users WHERE email = ?" (Only email) :: IO [Only Int]
+    close conn
+    return (null rows)  -- True se não existe mais usuário com esse email
 
 insertUser :: Text -> Text -> IO (Either String Int) -- Retorna Sring em caso de erro ou Int (userId) em caso de sucesso
 insertUser email password = do

@@ -80,6 +80,16 @@
   (major1) == 1 && (major2) <  0 || \
   (major1) == 1 && (major2) == 0 && (minor) <= 4)
 #endif /* MIN_VERSION_crypton */
+/* package hspec-2.11.12 */
+#ifndef VERSION_hspec
+#define VERSION_hspec "2.11.12"
+#endif /* VERSION_hspec */
+#ifndef MIN_VERSION_hspec
+#define MIN_VERSION_hspec(major1,major2,minor) (\
+  (major1) <  2 || \
+  (major1) == 2 && (major2) <  11 || \
+  (major1) == 2 && (major2) == 11 && (minor) <= 12)
+#endif /* MIN_VERSION_hspec */
 /* package http-conduit-2.3.9.1 */
 #ifndef VERSION_http_conduit
 #define VERSION_http_conduit "2.3.9.1"
