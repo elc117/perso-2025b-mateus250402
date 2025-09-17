@@ -9,6 +9,7 @@ import Data.Aeson.Types (Parser, parseEither)
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import Data.Maybe (mapMaybe)
+import Utils.Format as Format 
 
 data GameResult = GameResult
     { grName :: T.Text
@@ -52,7 +53,7 @@ parseGameResult = withObject "Game" $ \obj -> do
     releaseDate <- obj .:? "first_release_date"
     let year = case releaseDate of
             Nothing -> Nothing
-            Just timestamp -> Just $ timestampToYear timestamp
+            Just timestamp -> Just $ Format.timestampToYear timestamp
     
     cover <- obj .:? "cover" -- Extrai o objeto cover, se existir
     coverUrl <- case cover of
@@ -63,10 +64,3 @@ parseGameResult = withObject "Game" $ \obj -> do
             return $ Just $ "https:" <> bigUrl
     
     return $ GameResult name platformNames year coverUrl
-
--- Função helper para converter timestamp Unix para ano
-timestampToYear :: Int -> Int
-timestampToYear timestamp = 
-    let secondsInYear = 365 * 24 * 60 * 60
-        yearsSince1970 = timestamp `div` secondsInYear
-    in 1970 + yearsSince1970

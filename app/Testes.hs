@@ -5,10 +5,12 @@ module Main where
 import Test.Hspec
 import Test.QuickCheck
 import qualified Data.Text as T
+import qualified Data.ByteString.Lazy.Char8 as LBS
 
 import qualified Utils.Data as Data
 import qualified Utils.Format as Format
 import qualified DB.DB as DB
+import qualified Api.Igdb as Igdb
 import Models.Games (Game(..))
 
 testFilterGames :: Spec
@@ -109,7 +111,31 @@ testDB = do
                 _ -> expectationFailure "Failed to insert games"         
             return ()
 
+testApi :: Spec
+testApi = do
+    describe "========== API Tests ==========" $ do
+
+        it "search games" $ do
+            let gameName = (T.pack "Call of Duty")
+            results <- Igdb.searchMultipleGames gameName
+            length results `shouldSatisfy` (> 0) -- Sucesso aqui indica que parseGameResult e parseGameResultSafe executaram com sucesso
+
+testFormat :: Spec
+testFormat = do
+    describe "========== Format Tests ==========" $ do
+        it "timestamp to year" $ do
+            let timeStamp = 1758132254 -- Exemplo de timestamp
+            let year = Format.timestampToYear timeStamp
+            year `shouldBe` 2025
+
+        it "parse form data" $ do
+            let formData = "email=test%40example.com&password=secret"
+            let parsed = Format.parseFormData (LBS.pack formData)
+            parsed `shouldBe` [("email", "test@example.com"), ("password", "secret")]
+
 main :: IO ()
-main = do
-    hspec testFilterGames 
-    hspec testDB
+main = hspec $ do
+    testFilterGames
+    testDB
+    testApi
+    testFormat

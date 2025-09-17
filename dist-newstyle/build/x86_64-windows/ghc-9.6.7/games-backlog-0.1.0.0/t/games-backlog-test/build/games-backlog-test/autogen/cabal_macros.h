@@ -100,6 +100,16 @@
   (major1) == 2 && (major2) <  11 || \
   (major1) == 2 && (major2) == 11 && (minor) <= 12)
 #endif /* MIN_VERSION_hspec */
+/* package http-conduit-2.3.9.1 */
+#ifndef VERSION_http_conduit
+#define VERSION_http_conduit "2.3.9.1"
+#endif /* VERSION_http_conduit */
+#ifndef MIN_VERSION_http_conduit
+#define MIN_VERSION_http_conduit(major1,major2,minor) (\
+  (major1) <  2 || \
+  (major1) == 2 && (major2) <  3 || \
+  (major1) == 2 && (major2) == 3 && (minor) <= 9)
+#endif /* MIN_VERSION_http_conduit */
 /* package http-types-0.12.4 */
 #ifndef VERSION_http_types
 #define VERSION_http_types "0.12.4"

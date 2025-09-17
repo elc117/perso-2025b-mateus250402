@@ -80,12 +80,14 @@ test-suite games-backlog-test
                         cookie,
                         blaze-builder,
                         wai,
-                        QuickCheck
+                        QuickCheck,
+                        http-conduit
 
     other-modules:      Utils.Data,
                         Utils.Format,
                         Models.Games,
-                        DB.DB
+                        DB.DB,
+                        Api.Igdb
 
     default-language:   Haskell2010
     other-extensions:   OverloadedStrings

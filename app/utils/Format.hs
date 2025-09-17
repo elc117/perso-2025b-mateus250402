@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Utils.Format (parseFormData) where
+module Utils.Format where
 
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Text as T
@@ -17,3 +17,9 @@ parseFormData bodyLazy =
             valStr = maybe "" (T.unpack . TE.decodeUtf8) value
         in (keyStr, valStr)
     ) parsed
+
+timestampToYear :: Int -> Int
+timestampToYear timestamp = 
+    let secondsInYear = 365 * 24 * 60 * 60
+        yearsSince1970 = timestamp `div` secondsInYear
+    in 1970 + yearsSince1970
