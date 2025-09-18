@@ -1,15 +1,22 @@
-# Trabalho backend web
+# Trabalho Backend Web
 
 **Identificação:** Mateus Cardoso Oliveira, Sistemas de Informação - UFSM
 
-**Tema/objetivo:** Esse trabalho tem como objetivo criar um sistema web para um backlog de jogos, o foco do trabalho está no desenvolvimento do backend utilizando a linguagem de programação funcional Haskell.
+**Tema/Objetivo:**  
+Esse trabalho tem como objetivo criar um sistema web para um backlog de jogos, com foco no desenvolvimento do backend utilizando a linguagem de programação funcional Haskell.
 
-**Processo de desenvolvimento:**
+## Processo de Desenvolvimento
 
-Esse projeto "nasce" há 2 anos, quando tive meus primeiros contatos com programção, tentei construir um aplicativo mobile com esse mesmo objetivo, porém por falta de conhecimento na época ficou aquém do desejável, agora trago de volta essa ideia com uma maior capacidade de criação e compreensão.
-Iniciei o desenvolvimento dele com um "esquema pronto" na cabeça, usuários, autenticação, sessão, banco de dados, a ideia dos cartões coloridos e seu desing em si. 
+Este projeto "nasceu" há 2 anos, quando tive meus primeiros contatos com programação. Na época, tentei construir um aplicativo mobile com o mesmo objetivo, mas por falta de conhecimento o resultado ficou aquém do desejável. Agora, retomo essa ideia com maior capacidade de criação e compreensão.
 
-Primeiramente pesquisei sobre algumas biblitecas gráficas para utilizar, encontrei no Lucid o que precisava, algo que lembra HTML (que já tive contato) e que pudesse utilizar o framework Bootstrap para não dedicar muito tempo ao frontend, visto o objetivo principal do trabalho e minha vontade pessoal de seguir nessa linha. Visto o tamanho do projeto, o tempo disponível e meu desejo do que eu gostaria de fazer, optei pelo uso de IA para gerar código para o frontend, claro, fiz as adaptações necessárias para a perfeita exibição de como imaginei e também para manter um estilo padrão em todo site. Pude aprender sobre a sintaxe do Lucid, como o mesmo aplica os atributos nas tag HTML e percebi por ser um código em Haskell uma facilidade em alternar entre os estilos dos cards - ponto que não consegui superar na primeira concepção dessa ideia, há 2 anos - pois consegui com facilidade passar uma variável "gPlatform" e partindo dela decidir o estilio aplicado.
+Iniciei o desenvolvimento com um "esquema pronto" em mente: usuários, autenticação, sessões, banco de dados, a ideia dos cartões coloridos e seu design em si.
+
+Primeiramente, pesquisei algumas bibliotecas gráficas para utilizar. Encontrei no **Lucid** o que precisava: algo que lembra HTML (com o qual já tinha contato) e que me permitisse usar o **framework Bootstrap**, economizando tempo no frontend, visto que o foco principal do trabalho é o backend.
+
+Considerando o tamanho do projeto, o tempo disponível e minhas preferências, optei por usar IA para gerar código para o frontend. Claro, fiz adaptações necessárias para que a exibição ficasse como imaginei e para manter um estilo padrão em todo o site.  
+
+Durante o processo, aprendi sobre a sintaxe do Lucid, como ele aplica atributos nas tags HTML e percebi que, por se tratar de código Haskell, é fácil alternar estilos dos cards. Um ponto que não consegui superar na primeira concepção desse projeto, há 2 anos, agora foi resolvido: consegui, com facilidade, passar uma variável `gPlatform` e, a partir dela, definir o estilo aplicado.
+
 ```haskell
 let (cardBg, cardBorder) = case gPlatform of
     "PlayStation" -> ("#e3ecfa", "#0050d9")
@@ -17,64 +24,80 @@ let (cardBg, cardBorder) = case gPlatform of
     "PC"          -> ("#e6e6e6ff", "#303030ff")
     "Xbox"        -> ("#eafaf1", "#107c10")
 ```
-O próximo passo, visto minha experência prévia com web, foi a criação do banco de dados com sqlite com as tabela user e games, além disso as funções de registro e login. Nessa parte encontrei pouco dificuldade, mas lembro de que foi uma gigantesca barreira na primeira tentativa de desenvolver esse projeto por não estar habituado com tal linuagem. Derivando disso, comecei a esquematizar a ideia de sessão, para poder inserir o jogos com o id do usuário logado, além de não permitir acesso a certos mecanisos aos usuário não logados, como já tive experiência anteriormente em Python pensei que seria trivial, porém não encontrei no Scotty algo já pronto para isso, na verdade encontrei sim porém não era compatível com a minha versão, então pedi ajuda para um gerador de código sobre como fazer as funções necessárias, resultando nas que apresentarei junto do meu entendimento sobre:
-```haskell
-sessionInsert :: String -> String -> ActionM ()
-sessionInsert key value = do
-    let cookie = defaultSetCookie 
-            { setCookieName = TE.encodeUtf8 $ T.pack key 
-            , setCookieValue = TE.encodeUtf8 $ T.pack value
-            , setCookiePath = Just "/" 
-            }
-    setHeader "Set-Cookie" $ TL.fromStrict $ TE.decodeUtf8 $ BS.toStrict $ toLazyByteString $ renderSetCookie cookie 
-```
-Essa função recebe o nome de um cookie (que funciona como um aramazenamento do navegador) e o valor a inserir, o nome é dado pelo argumento key e o valor por value, os mesmo são formatodos para o formato esperado por suas respectivas funções, ```setCookiePath = Just "/"``` habilita o cookie para toda a estrutura do site. Por fim, o cookie é inserido no header do site para armazenar.
+O próximo passo, considerando minha experiência prévia com desenvolvimento web, foi a criação do banco de dados usando **SQLite**, com as tabelas `user` e `games`, além das funções de registro e login. Nessa etapa, encontrei pouca dificuldade, mas lembro que na primeira tentativa de desenvolver este projeto foi uma grande barreira por não estar habituado à linguagem.
 
-```haskell
-sessionLookup :: String -> ActionM (Maybe String)
-sessionLookup key = do
-    req <- request
-    let headers = requestHeaders req -
-    case lookup "Cookie" headers of 
-        Nothing -> return Nothing
-        Just cookieHeader -> do
-            let cookies = parseCookies cookieHeader
-                keyBS = TE.encodeUtf8 $ T.pack key 
-            case lookup keyBS cookies of
-                Nothing -> return Nothing
-                Just valueBS -> return $ Just $ T.unpack $ TE.decodeUtf8 valueBS
-```
-Já essa função serve para procurar no header um cookie especificaod pelo valor key e retornar seu valor, o que foi utilizado para obter o id do usuário e verificar se estava logado.
+A partir disso, comecei a esquematizar a ideia de **sessão**, para poder associar os jogos ao `id` do usuário logado e, ao mesmo tempo, impedir que usuários não logados acessassem certos mecanismos. 
 
-```haskell
-requireAuth :: ActionM () -> ActionM ()
-requireAuth action = do
-    userId <- sessionLookup "user_id"
-    case userId of
-        Just "" -> redirect "/login"
-        Just _ -> action
-        Nothing -> redirect "/login"
-```
-Essa função foi utilizada para validar se o usuário estava logado, caso não estivesse redireciona para a página de login, a função verifica se o cookie de user_id apresenta um valor ou não. A verificação de "" dá-se devido ao ```postLogout``` em Handles.hs que ao fazer o logout insere o valor "" no cookie user_id. Aqui vale ressaltar que enfrentei um erro no momento do login, pois pensava não ser necessário verificar "" na função, a solução foi simples, apenas adicionei essa verificação.
+Com experiência prévia em Python, achei que seria trivial implementar, mas percebi que no **Scotty** não havia algo pronto para isso compatível com a versão que utilizo. Então, recorri a um gerador de código para obter as funções necessárias, resultando nas implementações de funções para cookies, assunto que eu não conhecia, então tive a oportunidade de aprender sobre como o programa "armazena" na memório do navegador certos valores.
 
-Agora indo para as funções que interagem com o banco de dados a maior parte delas foi de fácil desenvolvimento, pedi para um assistente de IA se havia algum tipo de convenção ou recomendação na construção desse tipo de função, o mesmo informou sobre alguns tipos de retorno até então desconhecidos como o uso de `Maybe`, `Either` e `Connection`. Pedindo explicações sobre entendi que o `Maybe` seria para indicar que pode ou não ter aquele retorno, no contexto notei na inserção da url da capa, pois ao pegar esse valor nas funções de integração com a API poderia retornar ou não um Text na capa, no caso do jogo não possuir capa. `Either` aprendi que indica quando há mais de um retorno para a mesma função, por exemplo em `insertUser :: Text -> Text -> IO (Either String Int)` que pode retornar uma mensgaem de erro (`String`) ou como sucesso o id do user (`Int`). Já para `Connection` entendi ser para representar uma conexão, visto que o mesmo é o retorno de `connectDB :: IO Connection`.
+Para os testes utilizei o hSpec, percebi que possui um sintaxe bem intuitiva, o teste funciona executanod uma função e comparando o resultado da mesma a um resultado fixo que seria o esperado, nessa parte enfrentei alguns problemas com os testes de banco de dados, por vezes errei o valor de retorno e acabava não chegando na limpeza do teste, ficando com usuários de teste e jogos de teste inseridos no banco de dados.
 
-O próximo passo foi um desenvolvimento conjunto entre alguns dos Handles da aplicação e as funções da API Igdb da Twitch https://www.igdb.com/api
+Por fim, enfrentei diversos problemas com a tipagem esperado por funções de bibliotecas, ponto no qual utilizei muito de Intelgência Artificial para compreender de forma rápida qual seria o tipo esperado por certa função. O desenvolvimento contou com constante refatoração e revisão do código, o uso de geradores de código e IA para apenas explicar determinadas dúvidas possibilitou um desenvolvimento mais rápido, claro, com constante verficação, pois a Intelgência Artificial é uma ótima ferramente, e não algo mágico que soluciona qualquer problema.
 
-**Orientações para execução:**
+# Orientações para Execução
 
-Para rodar o software abra no navegador http://localhost:3000/ e digite no terminal:
+## Rodando o Software
+
+Para executar o software, abra o navegador em:  
+[http://localhost:3000/](http://localhost:3000/)
+
+No terminal, execute os comandos:
+
 ```haskell
 cabal build
 cabal run
 ```
 
-Para execução dos teste digite no terminal:
+## Executando os testes
+
+No terminalm digite os seguintes comandos para rodar os testes:
 ```haskell
 cabal build --enable-test
 cabal test
 ```
 
-**Resultado final:** [Assita ao vídeo do resultado final](images/backlog.mp4)
+# Resultado Final
 
-- Referências e créditos (incluindo alguns prompts, se aplicável)
+[Assista ao vídeo do resultado final](images/backlog.mp4)
+
+
+# Referências e Créditos
+
+- **Scotty**: [https://github.com/scotty-web/scotty?tab=readme-ov-file](https://github.com/scotty-web/scotty?tab=readme-ov-file)  
+- **Lucid**: [https://hackage.haskell.org/package/lucid](https://hackage.haskell.org/package/lucid)  
+- **Código JuvEnart**: funções `autenticar`, `insert`, `delete` de minha autoria.  
+- **Gabriel Vargas Saueressig**
+
+---
+
+# Prompts e Perguntas do Projeto
+
+1. **Bootstrap das páginas**  
+   Foi solicitado que a IA gerasse o bootstrap das páginas, visto que o foco principal do trabalho é o backend web. Algumas adaptações foram feitas para o contexto do projeto.
+
+2. **Conexão com o banco de dados**  
+   Preciso criar uma função para conectar ao banco de dados.
+
+3. **Inserir valores em uma tabela**  
+   Solicitei um exemplo de como inserir valores em uma tabela.
+
+4. **Hash de senha**  
+   Como gerar um hash para senhas de usuários.
+
+5. **Estrutura `case of`**  
+   Perguntei como funciona o `case of` em Haskell. É semelhante a um `switch case`.
+
+6. **Anotação de tipo IO**  
+   Necessidade de usar a anotação de tipo: `IO (Either SomeException (Maybe Int))`.
+
+7. **Sessões com Scotty**  
+   Tentei usar Scotty Session, mas parece incompatível com a versão que uso. Perguntei como implementar funções de sessão de outra forma.
+
+8. **Requisição à API IGDB**  
+   Como realizar uma requisição HTTP para obter dados da API IGDB.
+
+9. **Obter informações de uma tabela**  
+   Como pegar dados de uma tabela para uso posterior no código.
+
+10. **Filtragem de dados**  
+    Como aplicar filtros para exibir informações específicas.
