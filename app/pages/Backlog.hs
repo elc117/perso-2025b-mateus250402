@@ -51,7 +51,6 @@ backlogCard (Game gId gTitle gScore gPlatform gCoverUrl) =
             "Nintendo"    -> ("#ffeaea", "#e60012")
             "PC"          -> ("#e6e6e6ff", "#303030ff")
             "Xbox"        -> ("#eafaf1", "#107c10")
-            _             -> ("#fff", "#bbb")
         cardStyle = T.concat
             [ "background:", cardBg, ";"
             , "border-bottom: 14px solid ", cardBorder, ";"
@@ -59,7 +58,7 @@ backlogCard (Game gId gTitle gScore gPlatform gCoverUrl) =
             ]
     in div_ [style_ "flex: 1 1 31%; max-width: 31%; min-width: 300px; margin-right: 2%; margin-left: 0;"] $ 
         div_ [class_ "game-card mb-2 position-relative", style_ cardStyle] $ do
-            -- Botão de excluir usando o id do jogo
+            
             form_ [method_ "post", action_ ("/delete/" <> T.pack (show gId)), class_ "delete-form"] $
                 button_ [type_ "submit", class_ "delete-btn", title_ "Excluir jogo", onclick_ "return confirm('Tem certeza que deseja excluir este jogo?')"] "×"
             
