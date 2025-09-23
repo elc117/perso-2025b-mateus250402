@@ -32,7 +32,7 @@ Com experiência prévia em Python, achei que seria trivial implementar, mas per
 
 Para os testes utilizei o hSpec, percebi que possui um sintaxe bem intuitiva, o teste funciona executanod uma função e comparando o resultado da mesma a um resultado fixo que seria o esperado, nessa parte enfrentei alguns problemas com os testes de banco de dados, por vezes errei o valor de retorno e acabava não chegando na limpeza do teste, ficando com usuários de teste e jogos de teste inseridos no banco de dados.
 
-Por fim, enfrentei diversos problemas com a tipagem esperado por funções de bibliotecas, ponto no qual utilizei muito de Intelgência Artificial para compreender de forma rápida qual seria o tipo esperado por certa função. O desenvolvimento contou com constante refatoração e revisão do código, o uso de geradores de código e IA para apenas explicar determinadas dúvidas possibilitou um desenvolvimento mais rápido, claro, com constante verficação, pois a Intelgência Artificial é uma ótima ferramente, e não algo mágico que soluciona qualquer problema.
+Por fim, enfrentei diversos problemas com a tipagem esperado por funções de bibliotecas, ponto no qual utilizei muito de Intelgência Artificial para compreender de forma rápida qual seria o tipo esperado por certa função. O desenvolvimento contou com constante refatoração e revisão do código, o uso de geradores de código e IA para apenas explicar determinadas dúvidas possibilitou um desenvolvimento mais rápido, claro, com constante verficação, pois a Intelgência Artificial é uma ótima ferramente, e não algo mágico que soluciona qualquer problema. Nisso, vale ressaltar que em determinada ocasião sofri com a "Inteligência" Artificial presa em um loop de erro com o uso de `rescue`, no qual havia um erro quanto a tipagem, em seguida a ferramenta aconselhava trocar a função, o que resultava em outro erro e então era pedido para voltar para o `rescue` e assim infinitamente.
 
 # Orientações para Execução
 
@@ -58,7 +58,7 @@ cabal test
 
 # Resultado Final
 
-[Assista ao vídeo do resultado final](images/backlog.mp4)
+[Assista ao vídeo do resultado final](https://youtu.be/qutBY-o_Gm0)
 
 
 # Referências e Créditos
@@ -70,7 +70,7 @@ cabal test
 
 ---
 
-# Prompts e Perguntas do Projeto
+## Prompts e Perguntas do Projeto
 
 1. **Bootstrap das páginas**  
    Foi solicitado que a IA gerasse o bootstrap das páginas, visto que o foco principal do trabalho é o backend web. Algumas adaptações foram feitas para o contexto do projeto.
