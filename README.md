@@ -34,6 +34,9 @@ Para os testes utilizei o hSpec, percebi que possui um sintaxe bem intuitiva, o 
 
 Por fim, enfrentei diversos problemas com a tipagem esperado por funções de bibliotecas, ponto no qual utilizei muito de Intelgência Artificial para compreender de forma rápida qual seria o tipo esperado por certa função. O desenvolvimento contou com constante refatoração e revisão do código, o uso de geradores de código e IA para apenas explicar determinadas dúvidas possibilitou um desenvolvimento mais rápido, claro, com constante verficação, pois a Intelgência Artificial é uma ótima ferramente, e não algo mágico que soluciona qualquer problema. Nisso, vale ressaltar que em determinada ocasião sofri com a "Inteligência" Artificial presa em um loop de erro com o uso de `rescue`, no qual havia um erro quanto a tipagem, em seguida a ferramenta aconselhava trocar a função, o que resultava em outro erro e então era pedido para voltar para o `rescue` e assim infinitamente.
 
+### Melhorias futuras
+Para o futuro pretendo adicionar mais opções de personalização nos cards baseando em mais plataformas, bem como plataformas mais antigas, além disso desejo adicionar mais opções de informação como se finalizou o game, platinou (obteve todas conquistas), comentários e mais, que devem ser exibidas ao cliclar no card adicionada, gerando uma página dinamicamente com tais informações, desejo também crirar um dashboard com informações sobre a coleção, por fim, inspirado no trabalho de Gabriel Vargas, pretendo fazer um sistema de recomendação de jogo.
+
 # Orientações para Execução
 
 ## Rodando o Software
